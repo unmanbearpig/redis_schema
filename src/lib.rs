@@ -25,7 +25,30 @@ where K: ToRedisArgs,
     cmd.clone()
 }
 
-/// Values that can be `SET`, `GET`
+/// Commands from https://redis.io/commands/?group=generic
+pub trait GenericValue<K: ToRedisArgs>: Key<K> {
+    /// Get the expiration time of a key.
+    fn ttl(self) -> Cmd
+        where Self: Sized
+    {
+        Cmd::ttl(self.key())
+    }
+
+    /// Get the expiration time of a key in milliseconds.
+    fn pttl(self) -> Cmd
+        where Self: Sized
+    {
+        Cmd::pttl(self.key())
+    }
+
+    fn expire(self, ttl_secs: usize) -> Cmd 
+        where Self: Sized
+    {
+        Cmd::expire(self.key(), ttl_secs)
+    }
+}
+
+/// Values that can be `SET`, `GET`, etc
 pub trait SingleValue<K: ToRedisArgs>: Key<K> {
     fn get<M: ToRedisArgs>(self) -> Cmd
         where Self: Sized
@@ -53,6 +76,8 @@ impl<K: ToRedisArgs> Key<K> for SetKey<K> {
         self.key
     }
 }
+
+impl<K: ToRedisArgs> GenericValue<K> for SetKey<K> {}
 
 impl<K: ToRedisArgs> SetKey<K> {
     pub fn sadd<M: ToRedisArgs>(self, member: M) -> Cmd {
@@ -93,6 +118,8 @@ pub struct StringKey<K: ToRedisArgs> {
 
 impl<K: ToRedisArgs> SingleValue<K> for StringKey<K> {
 }
+
+impl<K: ToRedisArgs> GenericValue<K> for StringKey<K> {}
 
 impl<K: ToRedisArgs> Key<K> for StringKey<K> {
     fn new(key: K) -> StringKey<K> {
